@@ -112,4 +112,26 @@ plot(marsfit)
 
 par(mfrow = c(1,2))
 # quality of fit diagnostics
-plot(cars2010)
+plot(cars2010$EngDispl, cars2010$FE,
+     xlab = "Engine Displacement",
+     ylab = "Fuel Efficiency (MPG)")
+lines(displacement, fitted(marsfit), col = 2, lwd = 2)
+
+Observed = cars2010$FE
+Predicted = fitted(marsfit)
+plot(Observed, Predicted, ylim = c(12,70))
+
+
+#####################################################
+#### Prediction performance based on the three models
+#####################################################
+
+# predict the test data for prediction
+cars2011$lm1 = predict(lm1fit, cars2011)
+cars2011$lm2 = predict(lm2fit, cars2011)
+cars2011$mars = predict(marsfit, cars2011)
+
+# get test set performance values via caret's postResample function
+postResample(pred = cars2011$lm1, obs = cars2011$FE)
+postResample(pred = cars2011$lm2, obs = cars2011$FE)
+postResample(pred = cars2011$mars, obs = cars2011$FE)
