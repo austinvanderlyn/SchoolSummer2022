@@ -1,0 +1,129 @@
+---
+title: "Exercise 2"
+author: "Austin Vanderlyn ajl745"
+date: "6/20/2022"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Read in data
+```{r}
+library(mlbench)
+data("Glass")
+```
+
+
+## 2.a Using visualizations, explore the predictor variables to understand their distributions as well as the relationships between predictors.
+
+Basic plots
+```{r}
+par(mfrow = c(3,3))
+library(lattice)
+a = Glass[, 1:9]
+for (i in 1:ncol(a)) {
+  hist(a[ ,i],
+  xlab = names(a[i]),
+  main = paste(names(a[i])))
+}
+```
+
+Check correlation;
+```{r}
+plot(a)
+```
+
+
+#### Interpretation
+
+The correlation plot shows that most of the variables do not appear to be strongly correlated. The one exception is the relationship between RI and Ca, which shows a positive linear correlation. There might be a slight negative correlation between RI and Si, but it doesn't look too strong, might not be a problem. 
+
+The plots of each different element show that some have normal distributions and some do not. RI, Na, Al and Si have relatively normal distributions, Mg is left skewed, and K, Ca, Ba and Fe are all right skewed.
+
+
+## 2.b Do there appear to be any outliers in the data? Are any predictors skewed? Show all work.
+
+Well, the skewed question I already answered above in part a, but just to restate;
+RI, Na, Al and Si have relatively normal distributions, Mg is left skewed, and K, Ca, Ba and Fe are all right skewed.
+
+
+Check for outliers via boxplots;
+```{r}
+par(mfrow = c(3,3))
+library(lattice)
+a = Glass[, 1:9]
+for (i in 1:ncol(a)) {
+  boxplot(a[ ,i],
+  xlab = names(a[i]),
+  main = paste(names(a[i])))
+}
+```
+
+It looks like there's outliers for every variable except Mg. Most are not that bad, but there appear to be some very extreme outliers when it comes to Ba and K
+
+
+## 2.c Are there any relevant transformations of one or more predictors that might improve the classification model? Show all work.
+
+
+All of them are indeed outside the range of -1 to 1, so we probably need to transform them. 
+
+Apply transformations;
+```{r}
+library(caret)
+GlassPP = preProcess(Glass, method = c("YeoJohnson", "center"))
+GlassTrans = predict(GlassPP, Glass)
+par(mfrow = c(3,3))
+library(lattice)
+a = GlassTrans[, 1:9]
+for (i in 1:ncol(a)) {
+  boxplot(a[ ,i],
+  xlab = names(a[i]),
+  main = paste(names(a[i])))
+}
+```
+
+
+I tried a bunch of different transformations here; starting with BoxCox, center, scale. I reran the loop with each iteration of transformation method, and seemed to have the best results with a YeoJohnson and centering transformation. However, while that worked really well for Mg and K, it didn't do the job with Fe and barely affected Ba. I suspect transformations will just not help with those two variables until something is done about the extreme outliers.
+
+
+#### 2.d Fit SVM model using following codes;
+
+```{r}
+library(kernlab)
+set.seed(231)
+sigDist = sigest(Type ~ ., data = Glass, frac = 1)
+sigDist
+```
+
+```{r}
+svmTuneGrid = data.frame(sigma = as.vector(sigDist)[1],
+                         C = 2^(-2:10))
+svmTuneGrid
+```
+
+```{r}
+set.seed(1056)
+svmFit = train(Type ~ .,
+               data = Glass,
+               method = "svmRadial",
+               preProc = c("center", "scale"),
+               tuneGrid = svmTuneGrid,
+               trControl = trainControl(method = "repeatedcv",
+                                        repeats = 5))
+
+
+```
+
+```{r}
+plot(svmFit,
+     scales = list(x = list(log = 2)))
+```
+
+Based on this, the optimum tuning parameter for C is most likely 2 or 4. That seems to be where there is the highest accuracy before the model trails off and starts overfitting. 
+
+
