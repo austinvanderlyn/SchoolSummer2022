@@ -1,0 +1,292 @@
+---
+title: "Homework 1"
+author: "Austin Vanderlyn ajl745"
+date: "6/24/2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Exercise 3.1
+
+##### The UC Irvine Machine Learning Repository6 contains a data set related to glass identification. The data consist of 214 glass samples labeled as one of seven class categories. There are nine predictors, including the refractive index and percentages of eight elements: Na, Mg, Al, Si, K, Ca, Ba, and Fe.
+
+#### (a) Using visualizations, explore the predictor variables to understand their distributions as well as the relationships between predictors.
+
+Access data;
+```{r}
+library(mlbench)
+data(Glass)
+```
+
+
+Create data set without "Type" column;
+```{r}
+X = Glass[, -10]
+```
+
+
+For loop of variable histograms;
+```{r}
+par(mfrow = c(3,3))
+for (i in 1:ncol(X)) {
+  hist(X[ ,i], xlab = names(X[i]), main = paste(names(X[i])), col = "greenyellow")
+}
+```
+
+
+Check correlation matrix;
+```{r}
+library(PerformanceAnalytics)
+chart.Correlation(X)
+```
+
+##### Analysis
+
+Looking at the histograms of the distribution for each of the variables, 4 of them seem to be approximately normally distributed; RI, Na, Al and Si, and the rest appear more skewed. K, Ca, Ba, and Fe are right skewed, and Mg is left skewed. 
+
+When looking at the correlation matrix, Ri and Ca look to be correlated to a significant level to cause problems. There is some slight correlation between RI and Si, Al and Ba, and Mg and Ba as well, but probably not enought to cause issues.
+
+
+#### (b) Do there appear to be any outliers in the data? Are any predictors skewed?
+
+The skewed question was answered above, when looking at the histograms. K, Ca, Ba, and Fe are right skewed, and Mg is left skewed. 
+
+
+We can check the outliers visually via boxplots;
+```{r}
+par(mfrow = c(3,3))
+library(lattice)
+for (i in 1:ncol(X)) {
+  boxplot(X[ ,i],
+  xlab = names(X[i]),
+  main = paste(names(X[i])),
+  horizontal = TRUE,
+  col = "dodgerblue4")
+}
+
+```
+
+Looking at the boxplots for each of the different variables, most don't seem to have outliers that are too bad, with the exceptions of Ba and K, which have some extreme ones, and Fe and Ca, which have some moderately extreme outliers.
+
+
+#### (c) Are there any relevant transformations of one or more predictors that might improve the classification model?
+
+We can check the quantitative skewness of each predictor with the skewness function;
+```{r}
+skewness(X)
+```
+
+RI, Mg, K, Ca, Ba and Fe are all outside the range of -1 to 1, so transformations would be in order.
+
+I already went through this process trying different transformations in exercise 2, and found YeoJohnson and center to do the best job of transforming the variables. 
+```{r}
+library(caret)
+GlassPP = preProcess(Glass, method = c("YeoJohnson", "center"))
+GlassTrans = predict(GlassPP, Glass)
+par(mfrow = c(3,3))
+library(lattice)
+a = GlassTrans[, 1:9]
+for (i in 1:ncol(a)) {
+  boxplot(a[ ,i],
+  xlab = names(a[i]),
+  main = paste(names(a[i])))
+}
+```
+
+The transformations did normalize most of the skewed variables, except for Ba, which seems to be hopelessly skewed. 
+
+
+### Exercise 3.2
+
+##### The soybean data can also be found at the UC Irvine Machine Learning Repository. Data were collected to predict disease in 683 soybeans. The 35 predictors are mostly categorical and include information on the environmental conditions (e.g., temperature, precipitation) and plant conditions (e.g., left spots, mold growth). The outcome labels consist of 19 distinct classes.
+
+```{r}
+library(mlbench)
+data(Soybean)
+str(Soybean)
+```
+
+
+#### (a) Investigate the frequency distributions for the categorical predictors. Are any of the distributions degenerate in the ways discussed earlier in this chapter?
+
+Check frequency distributions for each variable;
+```{r}
+Y = Soybean[, 2:36]
+par(mfrow = c(3, 4))
+for (i in 1:ncol(Y)) {
+  plot(Y[, i],
+  xlab = names(Y[i]),
+  ylab = "Frequency",
+  col = "firebrick4")
+}
+```
+
+So based on the discussion in the chapter, degenerate variables are ones that have near zero variance or zero variance, i.e. a frequency distribution where almost all of the results are one single result. 
+
+It looks like there's a couple variables that might be close, like mycellium, scierotia, leaf.mild, leaf.malf, but it's a little hard to tell for sure just by the graphs. 
+
+We can check the variance quantitatively to see if any are close to zero;
+```{r}
+nearZeroVar(Y, names = TRUE, saveMetrics = TRUE)
+```
+
+It looks like none have zero variance, but three of the variables do have near zero variance;
+```{r}
+nearZeroVar(Y, names = TRUE)
+```
+
+Leaf.mild, Mycelium, and Sclerotia are all degenerate.
+
+
+#### (b) Roughly 18 % of the data are missing. Are there particular predictors that are more likely to be missing? Is the pattern of missing data related to the classes?
+
+The aggr() function can count the number of missing data points for each predictor;
+```{r}
+library(VIM)
+aggr(Y,
+     sortVars = TRUE,
+     numbers = TRUE,
+     bars = TRUE)
+```
+
+
+```{r}
+library(dplyr)
+Soybean %>%
+  mutate(Total = n()) %>% 
+  filter(!complete.cases(.)) %>%
+  group_by(Class) %>%
+  mutate(Missing = n(), Proportion=Missing/(68+15+14+16+8)) %>%
+  select(Class, Missing, Proportion) %>%
+  unique()
+```
+
+Yes, there are various rates of missing values for the different predictors; hail, sever, seed.tmt, lodging are the top 4 that have elevated rates of missing values. 
+
+As for higher proportions of missing values by class, "phytophthora-rot" has the overwhelming majority of missing values at 56%, with the next highest class at only 12%.
+
+
+#### (c) Develop a strategy for handling missing data, either by eliminating predictors or imputation.
+
+Removing the entries with missing values is one of the more straightforward options, but since the distribution of missings is not equal across classes or predictors, I'm going to impute them. 
+
+This wasn't in the demonstration for data processing but in doing some R research it looks like the mice() function is fairly standard for imputing missing values, and I'm going to use predictive mean matching, which works for either numeric or categorical variables as the method;
+```{r}
+library(mice)
+soy2 = mice(Soybean,
+            m = 5,
+            method = "pmm",
+            printFlag = FALSE)
+```
+
+Can now run the aggr() function again to make sure that the missing values were imputed;
+```{r}
+aggr(complete(soy2),
+     sortVars = TRUE,
+     numbers = TRUE,
+     bars = TRUE)
+```
+
+
+### Exercise 4.1
+
+##### Consider the music genre data set described in Sect. 1.4. The objective for these data is to use the predictors to classify music samples into the appropriate music genre.
+
+#### (a) What data splitting method(s) would you use for these data? Explain.
+
+The distribution of data for the music genre dataset is summarized in a figure from the text that I'm having a hard time figuring out how to add to this rmd file, so I will have to just describe the dataset. 
+
+According to the text, there are 12,495 samples and 191 predictors. There are far more samples than predictors, so we are safe to divide it into a training and testing set on that front. 
+
+The distribution of class is not equal, for instance, there are far more samples of classical than metal, but there's enough of each class that we should be able to split the data using resampling and cross validation, and 10 fold cross-validation should be adequate and not too computationally taxing. 
+
+
+#### (b) Using tools described in this chapter, provide code for implementing your approach(es).
+
+I will use the createDataPartition() function and a train/test split of 80/20, and since I don't have the actual music dataset, I will write the code using a fake data file of "music";
+```{r}
+# set.seed(1)
+# music.split = createDataPartition(music, p = .80, k = 10, list = FALSE)
+```
+
+
+### Exercise 4.4 
+
+##### . Brodnjak-Vonina et al. (2005) develop a methodology for food laboratories to determine the type of oil from a sample. In their procedure, they used a gas chromatograph (an instrument that separate chemicals in a sample) to measure seven different fatty acids in an oil. These measurements would then be used to predict the type of oil in a food samples. To create their model, they used 96 samples2 of seven types of oils.
+
+```{r}
+data(oil)
+str(oilType)
+```
+
+
+
+#### (a) Use the sample function in base R to create a completely random sample of 60 oils. How closely do the frequencies of the random sample match the original samples? Repeat this procedure several times of understand the variation in the sampling process.
+
+```{r}
+set.seed(123)
+n = 10
+oilSamples = vector(mode = "list", length = 10)
+for (i in seq(along = oilSamples)) oilSamples[[i]] = table(sample(oilType, size = n))
+head(oilSamples)
+```
+
+It looks like there's a great deal of variation just using a simple random sample
+
+```{r}
+oilSamples = do.call("rbind", oilSamples)
+summary(oilSamples)
+```
+
+
+#### (b) Use the caret package function createDataPartition to create a stratified random sample. How does this compare to the completely random samples?
+
+Create stratified random sample;
+```{r}
+oilStrat = createDataPartition(oilType,
+                               p = 0.8,
+                               times = 10)
+oilStrat= do.call("rbind", oilStrat)
+summary(oilStrat)
+```
+
+I'm not really sure about these results, I might have messed up the code somewhere, but if it's correct, then at least there's much less variability among predictors.
+
+
+#### (3) With such a small samples size, what are the options for determiningperformance of the model? Should a test set be used?
+
+It's difficult to say, there's a smaller ratio of samples to predictors than in previous problems, but there are still enough that a test/training split is still possible, but it might not be necessary with this dataset.
+
+
+#### (4) Try different samples sizes and accuracy rates to understand the trade-off between the uncertainty in the results, the model performance, and the test set size.
+
+```{r}
+binom.test(16, 20)
+```
+
+```{r}
+binom.test(24, 30)
+```
+
+```{r}
+binom.test(8, 10)
+```
+
+```{r}
+binom.test(32, 40)
+```
+
+```{r}
+binom.test(40, 50)
+```
+
+```{r}
+binom.test(80, 100)
+```
+
+We can see through multiple tests of the binomial test that the lower level of the confidence interval keeps increasing, but at a sample size of around 40, the lower level stops increasing as much and the upper level starts to drop, so our ideal sample size is probably somewhere around 30.
