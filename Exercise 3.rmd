@@ -41,4 +41,179 @@ var = PCA.ab$sdev^2/sum(PCA.ab$sdev^2)*100
 head(var)
 ```
 
+This shows that almost all of the variance is explained by the first component, which is much less than the number of predictors.
+
+
+#### 3.c
+
+##### Split the data into a training and a test set for the response of the percentage of moisture, pre-process the data, and build each variety of models described in this chapter. For those models with tuning parameters, what are the optimal values of the tuning parameters?
+
+Split data;
+```{r}
+set.seed(123)
+ab = data.frame(absorp)
+split = createDataPartition(endpoints[, 3],
+                            p = 0.8,
+                            list = FALSE)
+
+absorpTrain = ab[split,]
+absorpTest = ab[-split,]
+endTrain = endpoints[split, 3]
+endTest = endpoints[-split,3]
+
+```
+
+
+Train control;
+```{r}
+ctrl = trainControl(method = "repeatedcv",
+                    repeats = 10)
+```
+
+
+Linear Model;
+```{r}
+set.seed(123)
+ab.lm = train(absorpTrain, endTrain,
+              method = "lm",
+              trControl = ctrl)
+ab.lm
+```
+
+
+
+PLS model;
+```{r}
+set.seed(123)
+pls.lm = train(absorpTrain, endTrain,
+              method = "pls",
+              tuneGrid = expand.grid(ncomp = 1:50),
+              trControl = ctrl)
+pls.lm
+```
+
+Plot PLS model;
+```{r}
+plot(pls.lm)
+```
+
+
+PCR model;
+```{r}
+set.seed(123)
+pcr.lm = train(absorpTrain, endTrain,
+              method = "pcr",
+              preProcess = c("center", "scale"),
+              tuneGrid = expand.grid(ncomp = 1:50),
+              trControl = ctrl)
+pcr.lm
+```
+
+
+```{r}
+plot(pcr.lm)
+```
+
+
+Ridge Regression model;
+```{r}
+set.seed(123)
+ptm = proc.time()
+library(elasticnet)
+
+ridgeGrid = expand.grid(lambda = seq(0, .1, 
+                                     length = 10))
+
+ridge.lm = train(absorpTrain, endTrain,
+                 method = "ridge",
+                 tuneGrid = ridgeGrid,
+                 trControl = ctrl,
+                 preProcess = c("center", "scale"))
+
+ridge.lm
+```
+
+
+ENET Model;
+```{r}
+set.seed(123)
+
+enetGrid = expand.grid(lambda = c(0, 0.01, .1),
+                       fraction = seq(.05, 1,
+                                      length = 20))
+
+enet.lm = train(absorpTrain, endTrain,
+                method = "enet",
+                tuneGrid = enetGrid,
+                trControl = ctrl,
+                preProcess = c("center", "scale"))
+
+enet.lm
+
+```
+
+
+Predictions;
+```{r}
+comps = rbind(pls.lm$results, pcr.lm$results)
+comps$Model = rep(c("PLS", "PCR"), each = 5)
+head(comps)
+```
+
+
+Store predictions;
+```{r}
+testResults = data.frame(obs = absorpTest,
+                         Linear_Regression = predict(ab.lm, absorpTest))
+
+testResults$LRM = predict(pcr.lm, absorpTest)
+
+testResults$PLS = predict(pls.lm, absorpTest)
+
+testResults$PCR = predict(pcr.lm, absorpTest)
+
+testResults$ENET = predict(enet.lm, absorpTest)
+
+testResults$Ridge = predict(ridge.lm, absorpTest)
+
+```
+
+
+Create data frame of scores;
+```{r}
+R2 = RMSE = MAE = numeric(0)
+
+R2[1] = cor(testResults$LRM, endTest)^2
+RMSE[1] = sqrt(mean((testResults$LRM - endTest)^2))
+MAE[1] = mean(abs(testResults$LRM - endTest))
+
+R2[2] = cor(testResults$PCR, endTest)^2
+RMSE[2] = sqrt(mean((testResults$PCR - endTest)^2))
+MAE[2] = mean(abs(testResults$PCR - endTest))
+
+
+R2[3] = cor(testResults$PLS, endTest)^2
+RMSE[3] = sqrt(mean((testResults$PLS - endTest)^2))
+MAE[3] = mean(abs(testResults$PLS - endTest)
+
+R2[4] = cor(testResults$Ridge, endTest)^2
+RMSE[4] = sqrt(mean((testResults$Ridge - endTest)^2))
+MAE[4] = mean(abs(testResults$Ridge - endTest))
+
+R2[5] = cor(testResults$ENET, endTest)^2
+RMSE[5] = sqrt(mean((testResults$ENET - endTest)^2))
+MAE[5] = mean(abs(testResults$ENET - endTest))
+
+results = cbind(R2, RMSE, MAE)
+row.names(results) = c("LRM", "PCR", "PLS", "Ridge", "ENET")
+results
+```
+
+
+results = cbind(R2, RMSE, MAE)
+row.names(results) = c("LRM", "PCR", "PLS", "Ridge", "ENET")
+results
+
+
+
 
