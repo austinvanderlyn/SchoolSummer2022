@@ -2,7 +2,10 @@
 title: "Exercise 3"
 author: "Austin Vanderlyn ajl745"
 date: "7/2/2022"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -151,7 +154,18 @@ enet.lm = train(absorpTrain, endTrain,
 enet.lm
 
 ```
+```{r}
+plot(enet.lm)
+```
 
+```{r}
+plot(ridge.lm)
+```
+
+
+#### 3.d
+
+##### Which model has the best predictive ability? Is any model significantly better or worse than the others?
 
 Predictions;
 ```{r}
@@ -209,10 +223,25 @@ row.names(results) = c("LRM", "PCR", "PLS", "Ridge", "ENET")
 results
 ```
 
+The models all have relatively similar R2, with the exception of the ridge regression, which has a much smaller R2, 74%. The ridge regression also has the highest RMSE and a pretty high MAE. The only other big outlier is the PLS model, which has a similar R2 but a crazy high MAE. Overall, I'd say none really stand out as being significantly better than the others, but a couple stand out as worse than the others; namely, the ridge regression and PLS. 
 
-results = cbind(R2, RMSE, MAE)
-row.names(results) = c("LRM", "PCR", "PLS", "Ridge", "ENET")
-results
+
+#### 3.e
+
+##### Explain which model you would use for predicting the percentage of moisture of a sample.
+
+If I had to pick one, I would select the ENET model. It has the highest R2, the lowest RMSE and the lowest MAE. Overall, it seems very stable and accurate for predictions.
+
+
+
+
+
+
+
+
+
+
+
 
 
 
