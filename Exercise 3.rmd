@@ -3,8 +3,8 @@ title: "Exercise 3"
 author: "Austin Vanderlyn ajl745"
 date: "7/2/2022"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
   word_document: default
 ---
 
@@ -154,6 +154,8 @@ enet.lm = train(absorpTrain, endTrain,
 enet.lm
 
 ```
+
+
 ```{r}
 plot(enet.lm)
 ```
@@ -166,13 +168,6 @@ plot(ridge.lm)
 #### 3.d
 
 ##### Which model has the best predictive ability? Is any model significantly better or worse than the others?
-
-Predictions;
-```{r}
-comps = rbind(pls.lm$results, pcr.lm$results)
-comps$Model = rep(c("PLS", "PCR"), each = 5)
-head(comps)
-```
 
 
 Store predictions;
@@ -208,7 +203,7 @@ MAE[2] = mean(abs(testResults$PCR - endTest))
 
 R2[3] = cor(testResults$PLS, endTest)^2
 RMSE[3] = sqrt(mean((testResults$PLS - endTest)^2))
-MAE[3] = mean(abs(testResults$PLS - endTest)
+MAE[3] = mean(abs(testResults$PLS - endTest))
 
 R2[4] = cor(testResults$Ridge, endTest)^2
 RMSE[4] = sqrt(mean((testResults$Ridge - endTest)^2))
