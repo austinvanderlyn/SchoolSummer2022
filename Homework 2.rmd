@@ -305,10 +305,168 @@ ctrl2 = trainControl(method = "repeatedcv")
 
 plsTune = train(train.finger, train.perm,
                 method = "pls",
-                tuneGrid = expand.grid(ncomp = 1:15),
+                tuneGrid = expand.grid(ncomp = 1:50),
                 trControl = ctrl2)
 plsTune
 ```
+
+
+plot the initial pls model with R^2;
+```{r}
+plot(plsTune,
+     metric = "Rsquared")
+```
+
+
+The optimal number of components to use is 8 and the corresponding R^2 is 0.5929008.
+
+```{r}
+set.seed(123)
+plsTune = train(train.finger, train.perm,
+                method = "pls",
+                tuneGrid = expand.grid(ncomp = 8),
+                trControl = ctrl2)
+plsTune
+```
+
+
+
+
+#### 6.2.d
+
+##### Predict the response for the test set. What is the test set estimate of R2?
+
+Predicted response for thes test set;
+```{r}
+pls.predict = predict(plsTune, test.finger,
+                      ncomp = 8)
+xyplot(test.perm ~ pls.predict,
+       xlab = "Observed",
+       ylab = "Predicted",
+       type = c("p", "r"),
+       xlim = c(-1:5),
+       ylim = c(-1:5))
+```
+
+```{r}
+rss.pls = sum((pls.predict - test.perm)^2)
+tss.pls = sum((test.perm - mean(test.perm))^2)
+r2.pls = 1 - rss.pls/tss.pls
+r2.pls
+```
+
+The test set estimate of R2 is 0.31, not that great.
+
+
+#### 6.2.e
+
+##### Try building other models discussed in this chapter. Do any have better predictive performance?
+
+The three main other types of models discussed in this chapter are the PCR, ridge regression, and elastic net model, so I'll fit one of each of those.
+
+PCR model;
+```{r}
+set.seed(123)
+pcrTune <- train(train.finger, train.perm,
+                 method = "pcr",
+                 metric = "Rsquared",
+                 tuneGrid = expand.grid(ncomp = 1:50),
+                 trControl = ctrl)
+pcrTune                  
+plot(pcrTune)
+```
+
+
+Ridge Regression Model;
+```{r}
+set.seed(123)
+ptm = proc.time()
+library(elasticnet)
+
+ridgeGrid = expand.grid(lambda = seq(0, .1, 
+                                     length = 10))
+
+ridgeTune = train(train.finger, train.perm,
+                 method = "ridge",
+                 metric = "Rsquared",
+                 tuneGrid = ridgeGrid,
+                 trControl = ctrl)
+
+ridgeTune
+```
+
+```{r}
+plot(ridgeTune)
+```
+
+
+ENET model;
+```{r}
+set.seed(123)
+
+enetGrid = expand.grid(lambda = c(0, 0.01, .1),
+                       fraction = seq(.05, 1,
+                                      length = 20))
+
+enetTune = train(train.finger, train.perm,
+                method = "enet",
+                metric = "Rsquared",
+                tuneGrid = enetGrid,
+                trControl = ctrl)
+
+enetTune
+```
+
+```{r}
+plot(enetTune)
+```
+
+
+Store predictions;
+```{r}
+test2Results = data.frame(obs = test.finger,
+                         PLS = predict(plsTune, test.finger))
+
+test2Results$PCR = predict(pcrTune, test.finger)
+
+test2Results$ENET = predict(enetTune, test.finger)
+
+test2Results$Ridge = predict(ridgeTune, test.finger)
+```
+
+
+Create data frame of scores;
+```{r}
+r2 = rmse = mae = numeric(0)
+
+r2[1] = cor(test2Results$PLS, test.perm)^2
+rmse[1] = sqrt(mean((test2Results$PLS - test.perm)^2))
+mae[1] = mean(abs(test2Results$PLS - test.perm))
+
+r2[2] = cor(test2Results$PCR, test.perm)^2
+rmse[2] = sqrt(mean((test2Results$PCR - test.perm)^2))
+mae[2] = mean(abs(test2Results$PCR - test.perm))
+
+r2[3] = cor(test2Results$Ridge, test.perm)^2
+rmse[3] = sqrt(mean((test2Results$Ridge - test.perm)^2))
+mae[3] = mean(abs(test2Results$Ridge - test.perm))
+
+r2[4] = cor(test2Results$ENET, test.perm)^2
+rmse[4] = sqrt(mean((test2Results$ENET - test.perm)^2))
+mae[4] = mean(abs(test2Results$ENET - test.perm))
+
+results2 = cbind(r2, rmse, mae)
+row.names(results2) = c("PLS", "PCR", "Ridge", "ENET")
+results2
+```
+
+It looks like the PLS performs the best of the models.
+
+
+### Exercise 7.4
+
+
+
 
 
 
