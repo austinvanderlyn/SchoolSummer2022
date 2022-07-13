@@ -465,11 +465,148 @@ It looks like the PLS performs the best of the models.
 
 ### Exercise 7.4
 
+##### Return to the permeability problem outlined in Exercise 6.2. Train several nonlinear regression models and evaluate the resampling and test set performance.
 
 
+#### 7.4.a
+
+##### Return to the permeability problem outlined in Exercise 6.2. Train several nonlinear regression models and evaluate the resampling and test set performance.
+
+The models discussed in chapter 7 are the Neural Net, MARS model, Support Vector Machines, and K-Nearest Neighbors, so I will build a model for each of those.
+
+Neural Net;
+```{r}
+nnetGrid = expand.grid(decay = c(0, 0.01, .1),
+                       size = c(1, 3, 5, 7),
+                       bag = FALSE)
+```
 
 
+```{r}
+set.seed(123)
+nnetTune = train(absorpTrain, endTrain,
+                 method = "avNNet",
+                 tuneGrid = nnetGrid,
+                 trControl = ctrl,
+                 preProc = c("center", "scale"),
+                 linout = TRUE,
+                 trace = FALSE,
+                 MaxNWts = 1000,
+                 maxit = 1000,
+                 allowParallel = FALSE)
+```
 
+```{r}
+nnetTune
+```
+
+```{r}
+plot(nnetTune)
+
+test3Results = data.frame(obs = endTest,
+                          NNET = predict(nnetTune, absorpTest))
+```
+
+
+MARS Model;
+```{r}
+set.seed(123)
+marsTune = train(absorpTrain, endTrain,
+                 method = "earth",
+                 tuneGrid = expand.grid(degree = 1,
+                                        nprune = 2:38),
+                 trControl = ctrl)
+marsTune
+```
+
+```{r}
+plot(marsTune)
+```
+
+```{r}
+marsImp = varImp(marsTune,
+                 scale = FALSE)
+plot(marsImp,
+     top = 10)
+
+test3Results$Mars = predict(marsTune, absorpTest)
+```
+
+
+SVM Model
+```{r}
+set.seed(123)
+svmTune = train(absorpTrain, endTrain,
+                method = "svmRadial",
+                preProc = c("center", "scale"),
+                tuneLength = 14,
+                trControl = ctrl)
+svmTune
+```
+
+```{r}
+plot(svmTune)
+
+test3Results$SVM = predict(svmTune, absorpTest)
+```
+
+
+SVM Polynomial model;
+```{r}
+svmGrid = expand.grid(degree = 1:2,
+                      scale = c(0.01, 0.005, 0.001),
+                      C = 2^(-2:5))
+```
+
+
+```{r}
+set.seed(123)
+svmPTune = train(absorpTrain, endTrain,
+                method = "svmPoly",
+                preProc = c("center", "scale"),
+                tuneGrid = svmGrid,
+                trControl = ctrl)
+svmPTune
+```
+
+```{r}
+plot(svmPTune)
+
+test3Results$SVMp = predict(svmPTune, absorpTest)
+```
+
+```{r}
+set.seed(123)
+knnTune = train(absorpTrain, endTrain,
+                method = "knn",
+                tuneGrid = data.frame(k = 1:20),
+                trControl = ctrl)
+knnTune
+```
+
+```{r}
+plot(knnTune)
+
+test3Results$KNN = predict(knnTune, absorpTest)
+```
+
+
+```{r}
+set.seed(123)
+Nnet.pred = predict(nnetTune, absorpTest)
+MARS.pred = predict(marsTune, absorpTest)
+SVM.pred = predict(svmTune, absorpTest)
+SVMp.pred = predict(svmPTune, absorpTest)
+knn.pred = predict(knnTune, absorpTest[, names(absorpTrain)])
+
+data.frame(rbind(NNET = postResample(pred = Nnet.pred, obs = endTest),
+                 MARS = postResample(pred = MARS.pred, obs = endTest),
+                 SVM = postResample(pred = SVM.pred, obs = endTest),
+                 SVMp = postResample(pred = SVMp.pred, obs = endTest),
+                 KNN = postResample(pred = knn.pred, obs = endTest)))
+```
+
+We get much better results with the Neural Net model, with a RMSE of only 0.42 and an R^2 close to 1. However, depending on what kind of data set is being worked on, that might be a bad choice. My computer took a RIDICULOUSLY long time to process the neural net, the polynomial SVM might be a better option, and its processing time was much more reasonable.
 
 
 
