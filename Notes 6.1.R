@@ -16,7 +16,7 @@ dim(solTrainX)
 # test data
 head(solTestY)
 head(solTestX)
-
+solTrainX$mo
 
 ##################################
 ## Stage 1: Data Pre-processing ##

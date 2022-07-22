@@ -50,13 +50,60 @@ partition.tree(sal.tree3,
 # without pruning
 sal.tree = tree(log(Salary) ~ Years + Hits,
                 data = Hitters1)
+summary(sal.tree)
+sal.tree
+plot(sal.tree)
+text(sal.tree,
+     pretty = 0)
+title("Baseball Player Salary Data")
 
 
+# Pruning a tree by cv
+set.seed(1)
+sal.tree0 = tree(log(Salary) ~ Years + Hits,
+                 data = Hitters1)
+my.tree.seq = cv.tree(sal.tree0)
+plot(my.tree.seq)
+opt.trees = which(my.tree.seq$dev == min(my.tree.seq$dev))
+# position of optimal (w/r/t error) trees
+min(my.tree.seq$size[opt.trees])
 
 
+# load the data
+data(solubility)
 
 
+# create a control function that will be used across models. We create the fold assignments explicitly instead of
+# relying on the random number seed being set to identical values
+set.seed(100)
+indx = createFolds(solTrainY,
+                   returnTrain = TRUE)
+ctrl = trainControl(method = "cv",
+                    index = indx)
 
+
+############################
+## Basic Regression Trees ##
+############################
+
+library(rpart)
+library(caret)
+ptm = proc.time()
+set.seed(100)
+cartTune = train(solTrainXtrans, solTrainY,
+                 method = "rpart",
+                 tuneLength = 25,
+                 trControl = ctrl)
+cartTune
+cartTune$finalModel
+proc.time()
+
+# plot the tuning results
+# cross-validated RMSE profile for the regression tree
+plot(cartTune,
+     scales = list(x = list(log = 10)))
+
+# use the partykit package to make 
 
 
 
