@@ -103,10 +103,52 @@ proc.time()
 plot(cartTune,
      scales = list(x = list(log = 10)))
 
-# use the partykit package to make 
+# use the partykit package to make some nice plots. First, convert the rpart objects to party objects
+library(partykit)
+cartTree = as.party(cartTune$finalModel)
+plot(cartTree)
+
+# get the variable importance. "competes" is an argument that controls whether splits not used in the tree
+# should be included in the importance calculations
+cartImp = varImp(cartTune,
+                 scale = FALSE,
+                 competes = FALSE)
+cartImp
+plot(cartImp,
+     20)
+
+# save the test set results in a data frame
+testResults = data.frame(obs = solTestY,
+                         CART = predict(cartTune, solTestXtrans))
+ptm = proc.time()
+set.seed(100)
+cGrid = data.frame(mincriterion = sort(c(.95, seq(.75, .99,
+                                                  length = 2))))
+ctreeTune = train(solTrainXtrans, solTrainY,
+                  method = "ctree",
+                  tuneGrid = cGrid,
+                  tuneLength = ctrl)
+ctreeTune
+proc.time()
+plot(ctreeTune)
+plot(ctreeTune$finalModel)
+
+# save the test set results in a data frame
+testResults$cTree = predict(ctreeTune, solTestXtrans)
 
 
+##################
+## Bagged Trees ##
+##################
 
+set.seed(100)
+treebagTune = train(solTrainXtrans, solTrainY,
+                    method = "treebag",
+                    nbagg = 50,
+                    trControl = ctrl)
+treebagTune
+
+# save the 
 
 
 
