@@ -148,11 +148,24 @@ treebagTune = train(solTrainXtrans, solTrainY,
                     trControl = ctrl)
 treebagTune
 
-# save the 
+# save the test set results in a data frame
+testResults$Bagged = predict(treebagTune, solTestXtrans)
 
 
+##############
+## Boosting ##
+##############
 
-
+gbmGrid = expand.grid(interaction.depth = seq(1, 7, by=2),
+                      n.trees = seq(100, 1000, by=100),
+                      shrinkage = c(0.01, 0.1),
+                      n.minobsinnode = 10)
+set.seed(100)
+gbmTune = train(solTrainXtrans, solTrainY,
+                method = "gbm",
+                tuneGrid = gbmGrid,
+                trControl = ctrl,
+                verbose = FALSE)
 
 
 
