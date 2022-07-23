@@ -166,6 +166,69 @@ gbmTune = train(solTrainXtrans, solTrainY,
                 tuneGrid = gbmGrid,
                 trControl = ctrl,
                 verbose = FALSE)
+gbmTune
+plot(gbmTune,
+     auto.key = list(columns = 4,
+                     lines = TRUE))
+
+# save the test set results in a data frame
+testResults$Boosting = predict(gbmTune, solTestXtrans)
+
+
+########################
+#### Random Forests ####
+########################
+
+mtryGrid = data.frame(mtry = floor(seq(10,
+                                       ncol(solTrainXtrans),
+                                       length = 10)))
+set.seed(100)
+rfTune = train(solTrainXtrans, solTrainY,
+               method = "rf",
+               tuneGrid = mtryGrid,
+               ntree = 200,
+               importance = TRUE,
+               trControl = ctrl)
+plot(rfTune)
+rfImp = varImp(rfTune,
+               scale = FALSE)
+rfImp
+plot(rfImp, 20)
+
+# save the test set results in a data frame
+testResults$RF = predict(rfTune, solTestXtrans)
+
+# tune the model using the OOB estimates
+ctrlOOB = trainControl(method = "oob")
+set.seed(100)
+rfTuneOOB = train(solTrainXtrans, solTrainY,
+                  method = "rf",
+                  tuneGrid = mtryGrid,
+                  ntree = 200,
+                  importance = TRUE, 
+                  trControl = ctrlOOB)
+rfTuneOOB
+plot(rfTuneOOB)
+rfImp = varImp(rfTuneOOB,
+               scale = FALSE)
+rfImp
+plot(rfImp, 20)
+
+# save the test set result in a data frame
+testResults$RFOOB = predict(rfTuneOOB, solTestXtrans)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
