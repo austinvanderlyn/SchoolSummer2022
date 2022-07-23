@@ -218,6 +218,37 @@ plot(rfImp, 20)
 testResults$RFOOB = predict(rfTuneOOB, solTestXtrans)
 
 
+################
+#### Cubist ####
+################
+
+cbGrid = expand.grid(committees = c(1:10, 20, 50, 75, 100),
+                     neighbors = c(0, 1, 5, 9))
+set.seed(100)
+cubistTune = train(solTrainXtrans, solTrainY,
+                   method = "cubist",
+                   tuneGrid = cbGrid,
+                   tuneLength = ctrl)
+cubistTune
+plot(cubistTune,
+     auto.key = list(columns = 4,
+                     lines = TRUE))
+cbImp = varImp(cubistTune,
+               scale = FALSE)
+cbImp
+plot(cbImp, 20)
+
+# save the test results in a dataframe
+testResults$Cubist = predict(cubistTune, solTestXtrans)
+
+
+##########################################
+#### Performance of Tree Based Models ####
+##########################################
+
+set.seed(100)
+
+
 
 
 
