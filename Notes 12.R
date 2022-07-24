@@ -86,6 +86,80 @@ ldaTune
 testResults$LDA = predict(ldaTune, Smarket.test)
 
 
+#####################################################
+#### Partial Least Squares Discriminant Analysis ####
+#####################################################
+
+set.seed(476)
+plsdaTune = train(Smarket.train[,1:8], Smarket.train$Direction,
+                  method = "pls",
+                  tuneGrid = expand.grid(.ncomp = 1:5),
+                  trControl = ctrl)
+plsdaTune
+
+# save the test set results in a data frame
+testResults$plsda = predict(plsdaTune, Smarket.test)
+
+
+##########################
+#### Penalized Models ####
+##########################
+glmnGrid = expand.grid(.alpha = c(0, .1, .2, .4, .6, .8, 1),
+                       .lambda = seq(.01, .2, length = 40))
+set.seed(476)
+glmnTune = train(as.matrix(Smarket.train[,1:8]), Smarket.train$Direction,
+                 method = "glmnet",
+                 tuneGrid = glmnGrid,
+                 metric = "ROC",
+                 trControl = ctrl)
+plot(glmnTune)
+
+# save the test set results in a data frame
+testResults$glmn = predict(glmnTune, Smarket.test)
+
+
+####################################
+#### Nearest Shrunken Centroids ####
+####################################
+nscGrid = data.frame(.threshold = 0:25)
+nscTune = train(as.matrix(Smarket.train[,1:8]), Smarket.train$Direction,
+                method = "pam",
+                preProc = c("center", "scale"),
+                tuneGrid = nscGrid,
+                metric = "ROC",
+                trControl = ctrl)
+nscTune
+plot(nscTune)
+
+# variable importance
+plot(varImp(nscTune,
+            scale = FALSE))
+
+# save the test set results in a data frame
+testResults$NSC = predict(nscTune, Smarket.test)
+
+
+####################
+#### ROC Curves ####
+####################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
