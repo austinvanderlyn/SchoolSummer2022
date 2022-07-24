@@ -2,7 +2,10 @@
 title: "Homework 2"
 author: "Austin Vanderlyn ajl745"
 date: "7/6/2022"
-output: html_document
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
