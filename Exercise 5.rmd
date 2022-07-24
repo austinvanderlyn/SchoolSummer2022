@@ -1,0 +1,107 @@
+---
+title: "Exercise 5"
+author: "Austin Vanderlyn ajl745"
+date: "7/24/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exercise 5
+
+#### This question should be answered using the Weekly data set, which is part of the ISLR package. This data is similar in nature to the Smarket data from this chapter's lab, except that it contains 1,089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+
+Libraries;
+```{r}
+library(AppliedPredictiveModeling)
+library(caret)
+library(ISLR)
+library(corrplot)
+```
+
+Data;
+```{r}
+data("Weekly")
+```
+
+
+
+### 5.a
+
+#### Produce some numerical and graphical summaries of the Weekly data. Do there appear to be any patterns? 
+
+Data exploration;
+```{r}
+head(Weekly)
+```
+
+```{r}
+plot(Weekly$Volume,
+     col = Weekly$Year)
+```
+
+Check correlation;
+```{r}
+wkcor = cor(Weekly[,1:8])
+corrplot(wkcor)
+```
+
+The only variables that appear to have any significant correlation are Year and Volume, but this isn't really surprising since we're dealing with stock market prices. The stock values don't restart at 0 in a near year, they build off of where the stocks finished at the end of the previous year, so we would expect them to be correlated.
+
+
+### 5.b
+
+#### Use the full data set to perform a logistic regression with Direction as the response and the five lag variables plus Volume as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically significant? If so, which ones?
+
+Fit a logistic regression model;
+```{r}
+set.seed(123)
+glmGrid = trainControl(method = "repeatedcv",
+                       repeats = 5)
+
+glmTune = train(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume,
+                data = Weekly,
+                family = "binomial",
+                method = "glm",
+                trControl = glmGrid)
+
+summary(glmTune)
+```
+
+The only predictor that appears to be significant at the default of alpha = 0.05 is Lag 2, with a p-value of 0.0296.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
