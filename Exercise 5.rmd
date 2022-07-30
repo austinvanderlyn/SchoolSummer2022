@@ -137,6 +137,117 @@ The accuracy of the model actually went down predicting on the test set, though 
 
 #### Repeat (d) using LDA
 
+Fit LDA model;
+```{r}
+set.seed(476)
+
+ctrl = trainControl(method = "LGOCV",
+                    summaryFunction = twoClassSummary,
+                    classProbs = TRUE,
+                    savePredictions = TRUE)
+
+ldaTune = train(Direction ~ .,
+                data = weeklyTrain,
+                method = "lda",
+                preProc = c("center", "scale"),
+                metric = "ROC",
+                trControl = ctrl)
+ldaTune
+```
+
+Calculate confusion matrix;
+```{r}
+set.seed(123)
+predslda = predict(ldaTune, weeklyTest)
+
+confusionMatrix(predslda, weeklyTest$Direction)
+```
+
+The LDA model has vastly better performance, 93.27%, and no points in the test set misclassified as Down.
+
+
+### 5.f
+
+#### Repeat using Partial Least Squares Discriminant Analysis
+
+Fit PLSDA model;
+```{r}
+set.seed(123)
+plsdaTune = train(Direction ~ .,
+                  data = weeklyTrain,
+                  method = "pls",
+                  metric = "ROC",
+                  tuneGrid = expand.grid(.ncomp = 1:5),
+                  trControl = ctrl)
+plot(plsdaTune)
+```
+
+Compute confusion matrix;
+```{r}
+set.seed(123)
+predsplsda = predict(plsdaTune, weeklyTest)
+
+confusionMatrix(predsplsda, weeklyTest$Direction)
+```
+
+
+Even better performance with the PLSDA model; 98.08% accuracy on the test set predictions.
+
+
+### 5.g
+
+#### Repeat (d) using Nearest Shrunken Centroids
+
+Fit NSC model;
+```{r}
+nscGrid = data.frame(.threshold = 0:25)
+nscTune = train(Direction ~ .,
+                data = weeklyTrain,
+                method = "pam",
+                preProc = c("center", "scale"),
+                tuneGrid = nscGrid,
+                metric = "ROC",
+                trControl = ctrl)
+nscTune
+plot(nscTune)
+```
+
+Compute confusion matrix;
+```{r}
+set.seed(123)
+predsnsc = predict(nscTune, weeklyTest)
+
+confusionMatrix(predsnsc, weeklyTest$Direction)
+```
+
+There's a big step down for the nearest shrunken centroids model, down to 83.65% accuracy on the test set. There's also a lopsided error effect like in the logistic model; all of the errors were misclassifications of Down, whereas Up was always correctly predicted.
+
+
+### 5.h
+
+#### Which of these methods appears to provide the best results on this data?
+
+Make table;
+```{r}
+set.seed(123)
+testResults = data.frame(rbind(Logistic = postResample(preds2, weeklyTest$Direction),
+                         LDA = postResample(predslda, weeklyTest$Direction),
+                         PLSDA = postResample(predsplsda, weeklyTest$Direction),
+                         NSC = postResample(predsnsc, weeklyTest$Direction)))
+testResults
+```
+
+The PLSDA model performs best, with an accuracy of 98.07%. I excluded the first logistic model because it was trained on the entire dataset instead of a specific time period like the others, so can't really compare results to them. The LDA performed well too, but PLSDA performs just a little bit better. 
+
+
+
+
+
+
+
+
+
+
 
 
 
