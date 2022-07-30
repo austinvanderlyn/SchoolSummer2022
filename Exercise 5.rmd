@@ -73,16 +73,69 @@ summary(glmTune)
 The only predictor that appears to be significant at the default of alpha = 0.05 is Lag 2, with a p-value of 0.0296.
 
 
+### 5.c
+
+#### Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+
+Compute confusion matrix;
+```{r}
+set.seed(123)
+preds = predict(glmTune, Weekly)
+
+confusionMatrix(preds, Weekly$Direction)
+```
 
 
+Wow, not the greatest accuracy rate, only 56.11%.
+
+As for the types of errors made, the model is extremely lopsided. Down and Up are a little different from a usual binary predictor 0/1 but if we take down to be 0 and Up to be 1, then the model is way worse when it comes to Type I errors; that is, it predicts Up and actually is Down, a false positive. 
+
+There are 478 misclassifications, and 430 of them are Type I errors, 90% of the total errors. Type II (false negative) are only 10% of the errors.
 
 
+### 5.d
+
+#### Now fit the logistic regression model using a training data period from 1990 to 2008. Compute the confusion matrix and the overall fraction of correct predictions for the held out data.
+
+create the training and testing set;
+```{r}
+train = (Weekly$Year <2009)
+weeklyTrain = Weekly[train,]
+weeklyTest = Weekly[!train,]
+```
 
 
+fit logit model using training data;
+```{r}
+set.seed(123)
+glmGrid = trainControl(method = "repeatedcv",
+                       repeats = 5)
+
+glmTune2 = train(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume,
+                data = weeklyTrain,
+                family = "binomial",
+                method = "glm",
+                trControl = glmGrid)
+
+summary(glmTune2)
+```
 
 
+Compute confusion matrix;
+```{r}
+set.seed(123)
+preds2 = predict(glmTune2, weeklyTest)
+
+confusionMatrix(preds2, weeklyTest$Direction)
+```
 
 
+The accuracy of the model actually went down predicting on the test set, though the types of errors are a little bit more balanced out. The overall number of correct predictions on the held out data is 46.15%.
+
+
+### 5.d
+
+#### Repeat (d) using LDA
 
 
 
