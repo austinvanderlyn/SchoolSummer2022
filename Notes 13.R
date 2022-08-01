@@ -52,6 +52,65 @@ plot(QDAROC, col=1, lty=1, lwd=2)
 confusionMatrix(data = predict(QDATune, Smarket.test),
                 reference = Smarket.test$Direction)
 
+###########################################
+#### Regularized Discriminant Analysis ####
+###########################################
+
+set.seed(123)
+RDATune = train(x = as.matrix(Smarket.train[,1:8]),
+                y = Smarket.train$Direction,
+                method = "rda",
+                preProc = c("center", "scale"),
+                metric = "ROC",
+                trControl = ctrl)
+RDATune
+
+
+#######################################
+#### Mixture Discriminant Analysis ####
+#######################################
+
+set.seed(123)
+MDATune = train(as.matrix(Smarket.train[,1:8]),
+                Smarket.train$Direction,
+                method = "mda",
+                tuneGrid = expand.grid(.subclasses = 3:10),
+                metric = "ROC",
+                trControl = ctrl)
+MDATune
+
+
+#####################
+#### Naive Bayes ####
+#####################
+
+set.seed(123)
+NBTune = train(as.matrix(Smarket.train[,1:8]),
+               Smarket.train$Direction,
+               method = "nb",
+               preProc = c("center", "scale"),
+               metric = "ROC",
+               trControl = ctrl)
+NBTune
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
