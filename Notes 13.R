@@ -29,11 +29,28 @@ ctrl = trainControl(method = "LGOCV",
 
 #########################################
 #### Quadratic Discriminant Analysis ####
+#########################################
+
+QDATune = train(x = as.matrix(Smarket.train[,1:8]),
+                y = Smarket.train$Direction,
+                method = "qda",
+                metric = "ROC",
+                trControl = ctrl)
+QDATune
 
 
+# library
+# predict the test set based on the logistic regression
+Smarket.test$QDA = predict(QDATune, Smarket.test,
+                           type = "prob")[,1]
 
+# ROC for QDA model
+QDAROC = roc(Smarket.test$Direction, Smarket.test$QDA)
+plot(QDAROC, col=1, lty=1, lwd=2)
 
-
+# confusion matrix of QDA model
+confusionMatrix(data = predict(QDATune, Smarket.test),
+                reference = Smarket.test$Direction)
 
 
 
