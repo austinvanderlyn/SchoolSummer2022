@@ -219,10 +219,35 @@ plot(MDAROC, col = 3, lty = 3, lwd = 2)
 NBROC = roc(Smarket.test$Direction, Smarket.test$NB)
 plot(NBROC, col = 4, lty = 4, lwd = 2)
 
+# ROC for KNN
+KNNROC = roc(Smarket.test$Direction, Smarket.test$KNN)
+plot(KNNROC, col = 5, lty = 5, lwd = 2)
 
+# ROC for NN
+NNROC = roc(Smarket.test$Direction, Smarket.test$NN)
+plot(NNROC, col = 6, lty = 6, lwd = 2)
 
+# ROC for FDA
+FDAROC = roc(Smarket.test$Direction, Smarket.test$FDA)
+plot(FDAROC, col = 7, lty = 7, lwd = 2)
 
+# ROC for SVM
+SVMROC = roc(Smarket.test$Direction, Smarket.test$SVM)
+plot(SVMROC, col = 8, lty = 8, lwd = 2)
 
+# combine plots
+plot(QDAROC, col = 1, lty = 1, lwd = 2)
+plot(FDAROC, col = 2, lty = 2, lwd = 2, add = TRUE)
+plot(MDAROC, col = 3, lty = 3, lwd = 2, add = TRUE)
+plot(NBROC, col = 4, lty = 4, lwd = 2, add = TRUE)
+plot(KNNROC, col = 5, lty = 5, lwd = 2, add = TRUE)
+plot(NNROC, col = 6, lty = 6, lwd = 2, add = TRUE)
+plot(FDAROC, col = 7, lty = 7, lwd = 2, add = TRUE)
+plot(SVMROC, col = 8, lty = 8, lwd = 2, add = TRUE)
+legend("bottomright",
+       c("QDA", "RDA", "MDA", "NV", "KNN", "NN", "FDA", "SVM"),
+       col = 1:8,
+       lty = 2)
 
 
 
