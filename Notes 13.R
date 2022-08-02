@@ -250,12 +250,47 @@ legend("bottomright",
        lty = 2)
 
 
+######################################################
+#### create confusion matrices from the test data ####
+######################################################
+
+# confusion matrix of QDA
+confusionMatrix(data = predict(QDATune, Smarket.test),
+                reference = Smarket.test$Direction)
 
 
+# confusion matrix of RDA
+confusionMatrix(data = predict(RDATune, Smarket.test),
+                reference = Smarket.test$Direction)
 
+# confusion matrix of MDA
+confusionMatrix(data = predict(MDATune, Smarket.test),
+                reference = Smarket.test$Direction)
 
+# confusion matrix of NB
+confusionMatrix(data = predict(NBTune, Smarket.test),
+                reference = Smarket.test$Direction)
 
+# confusion matrix of KNN
+confusionMatrix(data = predict(KNNTune, Smarket.test),
+                reference = Smarket.test$Direction)
 
+# confusion matrix of NN
+confusionMatrix(data = predict(NNTune, Smarket.test),
+                reference = Smarket.test$Direction)
+
+# confusion matrix of FDA
+confusionMatrix(data = predict(FDATune, Smarket.test),
+                reference = Smarket.test$Direction)
+
+# confusion matrix of SVM
+confusionMatrix(data = predict(SVMTune, Smarket.test[,1:8]),
+                reference = Smarket.test$Direction)
+
+# resamples of training data
+res = resamples(list(QDA = QDATune, RDA = RDATune, MDA = MDATune, NB = NBTune, KNN = KNNTune,
+                     NN = NNTune, FDA = FDATune, SVM = SVMTune))
+dotplot(res)
 
 
 
