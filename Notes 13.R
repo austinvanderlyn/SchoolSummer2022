@@ -94,6 +94,69 @@ NBTune = train(as.matrix(Smarket.train[,1:8]),
 NBTune
 
 
+#############################
+#### K-Nearest Neighbors ####
+#############################
+
+set.seed(123)
+KNNTune = train(as.matrix(Smarket.train[,1:8]),
+                Smarket.train$Direction,
+                method = "knn",
+                preProc = c("center", "scale"),
+                metric = "ROC",
+                tuneGrid = data.frame(.k = seq(1, 400, by = 10)),
+                trControl = ctrl)
+KNNTune
+
+
+#########################
+#### Neural Networks ####
+#########################
+
+set.seed(123)
+nnetGrid = expand.grid(.size = 1:10,
+                       .decay = c(0, .1, 0, 2))
+maxsize = max(nnetGrid$.size)
+numWts = 200
+NNTune = train(as.matrix(Smarket.train[,1:8]),
+               Smarket.train$Direction,
+               method = "nnet",
+               preProc = c("center", "scale"),
+               metric = "ROC",
+               tuneGrid = nnetGrid,
+               trace = FALSE,
+               maxit = 2000,
+               MaxNWts = numWts,
+               trControl = ctrl)
+NNTune
+plot(NNTune)
+
+
+########################################
+#### Flexible Discriminant Analysis #### 
+########################################
+
+set.seed(1123)
+FDATune = train(as.matrix(Smarket.train[,1:8]),
+                Smarket.train$Direction,
+                method = "fda",
+                preProc = c("center", "scale"),
+                metric = "ROC",
+                trControl = ctrl)
+FDATune
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
