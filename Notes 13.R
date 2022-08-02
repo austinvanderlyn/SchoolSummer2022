@@ -165,18 +165,59 @@ SVMTune = train(as.matrix(Smarket.train[,1:8]),
 SVMTune                
 
 
+####################
+#### ROC Curves ####
+####################
+
+# predict the test set based on 8 models
+# QDA
+Smarket.test$QDA = predict(QDATune, Smarket.test,
+                           type = "prob")[,1]
+
+# RDA
+Smarket.test$RDA = predict(RDATune, Smarket.test,
+                           type = "prob")[,1]
+
+# MDA
+Smarket.test$MDA = predict(MDATune, Smarket.test,
+                           type = "prob")[,1]
+
+# NB
+Smarket.test$NB = predict(NBTune, Smarket.test,
+                           type = "prob")[,1]
+
+# KNN
+Smarket.test$KNN = predict(KNNTune, Smarket.test,
+                           type = "prob")[,1]
+
+# NN
+Smarket.test$NN = predict(NNTune, Smarket.test,
+                           type = "prob")[,1]
+
+# FDA
+Smarket.test$FDA = predict(FDATune, Smarket.test,
+                           type = "prob")[,1]
+
+# SVM
+Smarket.test$SVM = predict(SVMTune, Smarket.test[,1:8],
+                           type = "prob")[,1]
 
 
+# ROC for QDA
+QDAROC = roc(Smarket.test$Direction, Smarket.test$QDA)
+plot(QDAROC, col = 1, lty = 1, lwd = 2)
 
+# ROC for FDA
+FDAROC = roc(Smarket.test$Direction, Smarket.test$FDA)
+plot(FDAROC, col = 2, lty = 2, lwd = 2)
 
+# ROC for MDA
+MDAROC = roc(Smarket.test$Direction, Smarket.test$MDA)
+plot(MDAROC, col = 3, lty = 3, lwd = 2)
 
-
-
-
-
-
-
-
+# ROC for NB
+NBROC = roc(Smarket.test$Direction, Smarket.test$NB)
+plot(NBROC, col = 4, lty = 4, lwd = 2)
 
 
 
