@@ -29,10 +29,15 @@ ctrl = trainControl(method = "LGOCV",
 #### Classification Trees ####
 ##############################
 
-
-
-
-
+set.seed(123)
+rpartTune = train(x = as.matrix(Smarket.train[,1:8]),
+                  y = Smarket.train$Direction,
+                  method = "rpart",
+                  tuneLength = 30,
+                  metric = "ROC",
+                  trControl = ctrl)
+rpartTune
+plot(rpartTune)
 
 
 
