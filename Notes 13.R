@@ -146,10 +146,23 @@ FDATune = train(as.matrix(Smarket.train[,1:8]),
 FDATune
 
 
+#################################
+#### Support Vector Machines ####
+#################################
 
-
-
-
+set.seed(123)
+sigmaRangeReduced = sigest(as.matrix(Smarket.train[,1:8]))
+svmRGridReduced = expand.grid(.sigma = sigmaRangeReduced[1],
+                              .C = 2^(seq(-4, 4)))
+SVMTune = train(as.matrix(Smarket.train[,1:8]),
+                Smarket.train$Direction,
+                method = "svmRadial",
+                metric = "ROC",
+                preProc = c("center", "scale"),
+                tuneGrid = svmRGridReduced,
+                fit = FALSE,
+                trControl = ctrl)
+SVMTune                
 
 
 
