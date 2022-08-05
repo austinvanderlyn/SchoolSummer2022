@@ -41,6 +41,17 @@ plot(rpartTune)
 
 
 
+######################
+#### Bagged Trees ####
+######################
+
+set.seed(123)
+treebagTune = train(x = as.matrix(Smarket.train[,1:8]),
+                    y = Smarket.train$Direction,
+                    method = "treebag",
+                    nbagg = 50,
+                    trControl = ctrl)
+treebagTune
 
 
 
