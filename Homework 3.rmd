@@ -87,6 +87,7 @@ plsdaTune = train(fattyAcids, oilType,
                 metric = "Accuracy",
                 trControl = ctrl)
 plsdaTune
+plot(plsdaTune)
 ```
 
 
@@ -109,6 +110,7 @@ glmnTune = train(fattyAcids, oilType,
                 trControl = ctrl,
                 tuneGrid = glmnGrid)
 glmnTune
+plot(glmnTune)
 ```
 
 store glmn predictions;
@@ -154,11 +156,139 @@ confusionMatrix(testResults$nsc, testResults$obs)
 The nearest shrunken centroid model had a 5-way for most accuract predictor; C, D, E, F, and G all have 100% prediction rate. The worst accuracy rate was for Class A, which had a 97.3% accuracy rate.
 
 
+#### 13.2. Use the fatty acid data from the previous exercise set (Exercise 12.2).
+
+
+### (a) Use the same data splitting approach (if any) and pre-processing steps that you did in the previous chapter. Using the same classification statistic as before, build models described in this chapter for these data. Which model has the best predictive ability? How does this optimal model’s performance compare to the best linear model’s performance? Would you infer that the data have nonlinear separation boundaries based on this comparison?
+
+So again, I am going to use centering and scaling in the train function to preprocess the data, and not split the data into training/testing sets due to the nature of the response variable and the small sample size.
+
+The models discussed in Chapter 13 are the quadratic discrimininant analysis (QDA), the regularized discriminant analysis (RDA), the mixture discriminant analysis (MDA), naive Bayes, k-nearest neighbors, neural networks, flexible discriminant analysis, and support vector machines. I had trouble getting the QDA to run and eventually gave up on it but was able to fit all the other models discussed using the FattyAcids data.
 
 
 
+```{r}
+set.seed(123)
+marsGrid <- expand.grid(.degree = 1:2, .nprune = 2:38)
+FDATune = train(fattyAcids, oilType,
+                method = "fda",
+                preProcess = c("center", "scale"),
+                metric = "Accuracy",
+                trControl = ctrl,
+                tuneGrid = marsGrid)
+FDATune
+plot(FDATune)
+```
+
+MDA model;
+```{r}
+set.seed(123)
+MDATune = train(fattyAcids, oilType,
+                method = "mda",
+                preProcess = c("center", "scale"),
+                tuneGrid = expand.grid(.subclasses = 1:3),
+                metric = "Accuracy",
+                trControl = ctrl)
+plot(MDATune)
+```
 
 
+Naive Bayes;
+```{r}
+set.seed(123)
+grid_nb = expand.grid(.usekernel = TRUE,
+                      .fL = 2,
+                      .adjust = TRUE)
+NBTune = train(fattyAcids, oilType,
+                method = "nb",
+                preProcess = c("center", "scale"),
+                metric = "Accuracy",
+                trControl = ctrl,
+                tuneGrid = grid_nb)
+NBTune
+```
 
 
+Fit K-nearest neighbors model;
+```{r}
+set.seed(123)
+KNNTune = train(fattyAcids, oilType,
+                method = "knn",
+                preProcess = c("center", "scale"),
+                metric = "Accuracy",
+                trControl = ctrl,
+                tuneGrid = data.frame(.k = 1:50))
+KNNTune
+plot(KNNTune)
+```
 
+
+Fit SVM model;
+```{r}
+set.seed(123)
+sigmaRangeReduced = sigest(as.matrix(fattyAcids))
+svmRGridReduced <- expand.grid(.sigma = sigmaRangeReduced[1],.C = 2^(seq(-4, 4)))
+ctrl2 = trainControl(method = "LGOCV",
+                     summaryFunction = defaultSummary)
+
+SVMTune = train(fattyAcids, oilType,
+                method = "svmRadial",
+                preProcess = c("center", "scale"),
+                metric = "Accuracy",
+                trControl = ctrl2,
+                tuneGrid = svmRGridReduced)
+SVMTune
+plot(SVMTune)
+```
+
+Fit Neural Network;
+```{r}
+set.seed(123)
+nnetGrid = expand.grid(.size = 1:3,
+                       .decay = c(0, .1, 1, 2))
+nnetTune = train(fattyAcids, oilType,
+                 method = "nnet",
+                 metric = "Accuracy",
+                 preProc = c("center", "scale"),
+                 tuneGrid = nnetGrid,
+                 trControl = ctrl,
+                 trace = FALSE)
+nnetTune
+plot(nnetTune)
+```
+
+
+### (b) Which oil type does the optimal model most accurately predict? Least accurately predict?
+
+Make predictions for each of the different models;
+```{r}
+testResults2 = data.frame(obs = oilType,
+                          mda = predict(MDATune, fattyAcids))
+testResults2$fda = predict(FDATune, fattyAcids)
+testResults2$nb = predict(NBTune, fattyAcids)
+testResults2$knn = predict(KNNTune, fattyAcids)
+testResults2$svm = predict(SVMTune, fattyAcids)
+testResults2$nnet = predict(nnetTune, fattyAcids)
+```
+
+
+Confusion matrices;
+```{r}
+confusionMatrix(testResults2$mda, testResults2$obs)
+confusionMatrix(testResults2$fda, testResults2$obs)
+confusionMatrix(testResults2$nb, testResults2$obs)
+confusionMatrix(testResults2$knn, testResults2$obs)
+confusionMatrix(testResults2$svm, testResults2$obs)
+confusionMatrix(testResults2$nnet, testResults2$obs)
+```
+
+
+There's a couple of models here that wound up with 100% accuracy, but I don't think that that means it's a better model, that seems like there's some overfitting going on, so I think the best model here is the SVM, which had the highest non-100% accuracy rate.
+
+```{r}
+confusionMatrix(testResults2$svm, testResults2$obs)
+```
+
+Several of the oil types here have 100% prediction accuracy, and the lowest oil type prediction is for Class A.
+
+In general, all of the non-linear models performed better than the linear models, so yes, it is reasonable to assume that there are some non-linear separation boundaries.
