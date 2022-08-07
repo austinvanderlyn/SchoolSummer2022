@@ -1,0 +1,164 @@
+---
+title: "Homework 3"
+author: "Austin Vanderlyn ajl745"
+date: "8/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Homework 3
+
+#### 12.2. In Exercise 4.4, we described a data set which contained 96 oil samples each from one of seven types of oils (pumpkin, sunflower, peanut, olive, soybean, rapeseed, and corn). Gas chromatography was performed on each sample and the percentage of each type of 7 fatty acids was determined. We would like to use these data to build a model that predicts the type of oil based on a sample’s fatty acid percentages.
+
+
+### (a) Like the hepatic injury data, these data suffer from extreme imbalance. Given this imbalance, should the data be split into training and test sets?
+
+To be honest I'm not 100% sure what the question means by extreme imbalance (not normal distribution?) so I want to take a closer look at it first.
+
+Libraries;
+```{r}
+library(AppliedPredictiveModeling)
+library(caret)
+library(ISLR)
+library(pROC)
+library(MASS)
+library(glmnet)
+library(MLmetrics)
+data(oil)
+```
+
+
+plots
+```{r}
+plot(oilType)
+```
+
+Yes, that is definitely not a normal distribution. I don't think that splitting into train and test would necessarily be appropriate here, because the number of observations is so small, and the outcome variable has seven different levels. 
+
+
+### (b) Which classification statistic would you choose to optimize for this exercise and why?
+
+Well, with a continuous response variable, accuracy is not generally the best metric, but since this is a classification problem, accuracy is a decent enough metric to use.
+
+### (c) Of the models presented in this chapter, which performs best on these data? Which oil type does the model most accurately predict? Least accurately predict?
+
+The models presented in this chapter are; logistic regression, linear discriminant analysis, partial least squares discriminant analysis, penalized models, and nearest shrunken centroids, so those are the various types of models that I will to test this out on, except for logistic regression. That won't really work because this is a seven-level categorical response variable, not a binary one.
+
+
+Create ctrl function;
+```{r}
+set.seed(123)
+ctrl = trainControl(method = "LGOCV",
+                    classProbs = TRUE,
+                    savePredictions = TRUE)
+```
+
+
+Fit least discriminant analysis regression model;
+```{r}
+set.seed(123)
+ldaTune = train(fattyAcids, oilType,
+                method = "lda",
+                preProcess = c("center", "scale"),
+                metric = "Accuracy",
+                trControl = ctrl)
+ldaTune
+```
+
+
+LDA predictions;
+```{r}
+testResults = data.frame(obs = oilType,
+                         lda = predict(ldaTune, fattyAcids))
+testResults
+```
+
+
+
+Fit PLSDA model;
+```{r}
+set.seed(123)
+plsdaTune = train(fattyAcids, oilType,
+                method = "pls",
+                preProcess = c("center", "scale"),
+                metric = "Accuracy",
+                trControl = ctrl)
+plsdaTune
+```
+
+
+store PLSDA predictions;
+```{r}
+testResults$plsda = predict(plsdaTune, fattyAcids)
+```
+
+
+
+Fit penalized model;
+```{r}
+glmnGrid = expand.grid(.alpha = c(0, .1, .2, .4, .6, .8, 1),
+                       .lambda = seq(.01, .2, length = 40))
+set.seed(123)
+glmnTune = train(fattyAcids, oilType,
+                method = "glmnet",
+                preProcess = c("center", "scale"),
+                metric = "Accuracy",
+                trControl = ctrl,
+                tuneGrid = glmnGrid)
+glmnTune
+```
+
+store glmn predictions;
+```{r}
+testResults$glmn = predict(glmnTune, fattyAcids)
+```
+
+
+fit nearest shrunken centroid model;
+```{r}
+nscGrid = data.frame(.threshold = 0:25)
+set.seed(123)
+nscTune = train(fattyAcids, oilType,
+                method = "pam",
+                preProcess = c("center", "scale"),
+                metric = "Accuracy",
+                trControl = ctrl,
+                tuneGrid = nscGrid)
+nscTune
+plot(nscTune)
+```
+
+
+```{r}
+testResults$nsc = predict(nscTune, fattyAcids)
+```
+
+
+Compute Confusion matrices for all of the models;
+```{r}
+confusionMatrix(testResults$lda, testResults$obs)
+confusionMatrix(testResults$plsda, testResults$obs)
+confusionMatrix(testResults$glmn, testResults$obs)
+confusionMatrix(testResults$nsc, testResults$obs)
+```
+
+
+So, the best performing model here was the Nearest Shrunken Centroid. In terms of its accuracy in predicting each particular level of the response variable, we can take another look at the confusion matrix for that model;
+```{r}
+confusionMatrix(testResults$nsc, testResults$obs)
+```
+
+The nearest shrunken centroid model had a 5-way for most accuract predictor; C, D, E, F, and G all have 100% prediction rate. The worst accuracy rate was for Class A, which had a 97.3% accuracy rate.
+
+
+
+
+
+
+
+
+
+
